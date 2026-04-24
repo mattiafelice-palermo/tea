@@ -1,0 +1,10 @@
+{
+  "name": "battery-tea",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm --prefix frontend run dev\" \"python -u backend/dev.py\""
+  },
+  "devDependencies": {
+    "concurrently": "9.1.2"
+  }
+}
