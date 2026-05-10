@@ -1,10 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navItems = [
+  {
+    href: "/raw-materials",
+    label: "Raw Materials",
+    icon: (
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path
+          d="M6 4.5h8l2 4-6 7-6-7 2-4Zm-2 4h12M8 4.5l-1 4 3 7 3-7-1-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
   {
     href: "/components",
     label: "Components",
@@ -56,6 +73,22 @@ const navItems = [
     ),
   },
   {
+    href: "/studies",
+    label: "Studies",
+    icon: (
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path
+          d="M4.5 15.5h11M5.5 12.5l3-4 3 2 3-5M5.5 5.5h2m-2 3h2m-2 3h2"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
     href: "/results",
     label: "Results",
     icon: (
@@ -78,6 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pageTitle = getPageTitle(pathname);
+  const isFullWidthPage = pathname.startsWith("/studies");
 
   return (
     <div className={`app-shell ${sidebarOpen ? "sidebar-open" : "sidebar-collapsed"}`}>
@@ -85,6 +119,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="sidebar-top">
           <div className="brand-row">
             <div className="brand-block">
+              <Image
+                src="/app-icon.svg"
+                alt=""
+                width={34}
+                height={34}
+                className="brand-icon"
+                priority
+              />
               <h1>Battery TEA</h1>
             </div>
             <button
@@ -125,7 +167,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="hero">
           <h2>{pageTitle}</h2>
         </header>
-        <main className="content">{children}</main>
+        <main className={`content ${isFullWidthPage ? "content-full-width" : ""}`}>
+          {children}
+        </main>
       </div>
     </div>
   );

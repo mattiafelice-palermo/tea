@@ -1,8 +1,34 @@
+import hashlib
+import json
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 from app.calculations import CalculationComponent, CalculationScenario, calculate_metrics
 from app.models import ProjectComponent, Result, Scenario
+
+
+def build_input_signature(scenario: Scenario, project_components: list[ProjectComponent]) -> str:
+    payload = {
+        "scenario": {
+            "avg_discharge_voltage": scenario.avg_discharge_voltage,
+            "avg_charge_voltage": scenario.avg_charge_voltage,
+            "discharge_capacity": scenario.discharge_capacity,
+            "cycle_life": scenario.cycle_life,
+            "end_of_life_fraction": scenario.end_of_life_fraction,
+            "electricity_price_eur_per_kwh": scenario.electricity_price_eur_per_kwh,
+        },
+        "components": [
+            {
+                "component_id": item.component_id,
+                "mass": item.mass,
+                "cost_per_kg": item.component.cost_per_kg,
+            }
+            for item in sorted(project_components, key=lambda entry: entry.id)
+        ],
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def calculate_for_scenario(db: Session, scenario_id: int) -> Result:
@@ -24,6 +50,11 @@ def calculate_for_scenario(db: Session, scenario_id: int) -> Result:
     if not project_components:
         raise HTTPException(status_code=400, detail="Project has no components")
 
+    input_signature = build_input_signature(scenario, project_components)
+    result = db.query(Result).filter(Result.scenario_id == scenario_id).first()
+    if result is not None and result.input_signature == input_signature:
+        return result
+
     component_inputs = [
         CalculationComponent(mass=item.mass, cost_per_kg=item.component.cost_per_kg)
         for item in project_components
@@ -38,8 +69,8 @@ def calculate_for_scenario(db: Session, scenario_id: int) -> Result:
     )
 
     metrics = calculate_metrics(component_inputs, scenario_input)
+    metrics["input_signature"] = input_signature
 
-    result = db.query(Result).filter(Result.scenario_id == scenario_id).first()
     if result is None:
         result = Result(scenario_id=scenario_id, **metrics)
         db.add(result)

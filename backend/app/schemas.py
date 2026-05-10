@@ -22,6 +22,56 @@ class ComponentRead(ComponentBase):
     model_config = {"from_attributes": True}
 
 
+class RawMaterialBase(BaseModel):
+    name: str
+    cost_per_kg: float = Field(ge=0)
+
+
+class RawMaterialCreate(RawMaterialBase):
+    pass
+
+
+class RawMaterialUpdate(RawMaterialBase):
+    pass
+
+
+class RawMaterialRead(RawMaterialBase):
+    id: int
+
+    model_config = {"from_attributes": True}
+
+
+class ComponentRawMaterialCreate(BaseModel):
+    component_id: int
+    raw_material_id: int
+    mass_fraction: float = Field(gt=0)
+    mass_part: float | None = Field(default=None, gt=0)
+
+
+class ComponentRawMaterialUpdate(BaseModel):
+    raw_material_id: int | None = None
+    mass_fraction: float = Field(gt=0)
+    mass_part: float | None = Field(default=None, gt=0)
+
+
+class ComponentRawMaterialRead(BaseModel):
+    id: int
+    component_id: int
+    raw_material_id: int
+    mass_fraction: float
+    mass_part: float | None = None
+    raw_material: RawMaterialRead
+
+    model_config = {"from_attributes": True}
+
+
+class ComponentFormulationRead(BaseModel):
+    component_id: int
+    items: list[ComponentRawMaterialRead]
+    total_fraction: float
+    calculated_cost_per_kg: float
+
+
 class ProjectBase(BaseModel):
     name: str
     cell_active_area_m2: float = Field(gt=0, default=0.01)
@@ -215,3 +265,77 @@ class ResultRead(BaseModel):
     lcos: float
 
     model_config = {"from_attributes": True}
+
+
+class StudyModelPointBase(BaseModel):
+    x: float
+    y: float
+
+
+class StudyModelPointCreate(StudyModelPointBase):
+    pass
+
+
+class StudyModelPointRead(StudyModelPointBase):
+    id: int
+    model_id: int
+
+    model_config = {"from_attributes": True}
+
+
+class StudyModelBase(BaseModel):
+    name: str
+    kind: str
+    input_variable: str
+    output_metric: str
+    correlation_type: str
+    parameters: dict[str, float | str] = Field(default_factory=dict)
+    points: list[StudyModelPointCreate] = Field(default_factory=list)
+
+
+class StudyModelCreate(StudyModelBase):
+    pass
+
+
+class StudyModelUpdate(StudyModelBase):
+    pass
+
+
+class StudyModelRead(StudyModelBase):
+    id: int
+    points: list[StudyModelPointRead] = Field(default_factory=list)
+
+    model_config = {"from_attributes": True}
+
+
+class StudyEvaluateRequest(BaseModel):
+    x: float
+
+
+class StudyEvaluateResponse(BaseModel):
+    x: float
+    y: float
+
+
+class StudySweepRequest(BaseModel):
+    model_id: int
+    scenario_id: int
+    module_id: int | None = None
+    degradation_model_id: int | None = None
+    x_start: float
+    x_end: float
+    steps: int = Field(ge=2, le=101, default=11)
+    y_metric: str
+
+
+class StudySweepPoint(BaseModel):
+    x: float
+    model_output: float
+    y: float
+    metrics: dict[str, float]
+
+
+class StudySweepResponse(BaseModel):
+    model_id: int
+    y_metric: str
+    points: list[StudySweepPoint]

@@ -7,12 +7,16 @@ from app.config import settings
 from app.database import Base
 from app.models import (
     Component,
+    ComponentRawMaterial,
     ModuleConfiguration,
     ModuleResult,
     Project,
     ProjectComponent,
+    RawMaterial,
     Result,
     Scenario,
+    StudyModel,
+    StudyModelPoint,
 )
 
 config = context.config

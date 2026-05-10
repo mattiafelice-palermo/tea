@@ -4,8 +4,6 @@ import subprocess
 import sys
 import traceback
 
-import psycopg
-
 from app.config import settings
 
 
@@ -27,6 +25,14 @@ def check_database() -> None:
         sqlite_path.parent.mkdir(parents=True, exist_ok=True)
         log(f"Using local SQLite database: {sqlite_path}")
         return
+
+    try:
+        import psycopg
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "PostgreSQL URL detected, but 'psycopg' is not installed. "
+            "Install backend requirements or switch to SQLite."
+        ) from exc
 
     connection_url = settings.database_url.replace("postgresql+psycopg://", "postgresql://", 1)
     log(f"Checking database connection: {connection_url}")

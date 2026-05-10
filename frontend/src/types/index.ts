@@ -6,6 +6,28 @@ export type Component = {
   cost_per_kg: number;
 };
 
+export type RawMaterial = {
+  id: number;
+  name: string;
+  cost_per_kg: number;
+};
+
+export type ComponentRawMaterial = {
+  id: number;
+  component_id: number;
+  raw_material_id: number;
+  mass_fraction: number;
+  mass_part: number | null;
+  raw_material: RawMaterial;
+};
+
+export type ComponentFormulation = {
+  component_id: number;
+  items: ComponentRawMaterial[];
+  total_fraction: number;
+  calculated_cost_per_kg: number;
+};
+
 export type Project = {
   id: number;
   name: string;
@@ -116,4 +138,48 @@ export type ModuleResult = {
   module_cost_per_kwh: number;
   module_cost_per_lifetime_kwh: number;
   module_lcos: number;
+};
+
+export type StudyModelPoint = {
+  id?: number;
+  model_id?: number;
+  x: number;
+  y: number;
+};
+
+export type StudyModel = {
+  id: number;
+  name: string;
+  kind: "performance" | "degradation";
+  input_variable: string;
+  output_metric: string;
+  correlation_type: "linear" | "lookup" | "formula";
+  parameters: Record<string, number | string>;
+  points: StudyModelPoint[];
+};
+
+export type StudyMetadataOption = {
+  value: string;
+  label: string;
+};
+
+export type StudyMetadata = {
+  performance_inputs: StudyMetadataOption[];
+  performance_outputs: StudyMetadataOption[];
+  degradation_outputs: StudyMetadataOption[];
+  cell_metrics: StudyMetadataOption[];
+  module_metrics: StudyMetadataOption[];
+};
+
+export type StudySweepPoint = {
+  x: number;
+  model_output: number;
+  y: number;
+  metrics: Record<string, number>;
+};
+
+export type StudySweepResponse = {
+  model_id: number;
+  y_metric: string;
+  points: StudySweepPoint[];
 };

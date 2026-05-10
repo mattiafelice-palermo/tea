@@ -1,4 +1,4 @@
-from sqlalchemy import Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -12,6 +12,33 @@ class Component(Base):
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     density: Mapped[float] = mapped_column(Float, nullable=False)
     cost_per_kg: Mapped[float] = mapped_column(Float, nullable=False)
+    raw_materials: Mapped[list["ComponentRawMaterial"]] = relationship(
+        back_populates="component", cascade="all, delete-orphan"
+    )
+
+
+class RawMaterial(Base):
+    __tablename__ = "raw_materials"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    cost_per_kg: Mapped[float] = mapped_column(Float, nullable=False)
+
+
+class ComponentRawMaterial(Base):
+    __tablename__ = "component_raw_materials"
+    __table_args__ = (
+        UniqueConstraint("component_id", "raw_material_id", name="uq_component_raw_material"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    component_id: Mapped[int] = mapped_column(ForeignKey("components.id"), nullable=False)
+    raw_material_id: Mapped[int] = mapped_column(ForeignKey("raw_materials.id"), nullable=False)
+    mass_fraction: Mapped[float] = mapped_column(Float, nullable=False)
+    mass_part: Mapped[float] = mapped_column(Float, nullable=True)
+
+    component: Mapped["Component"] = relationship(back_populates="raw_materials")
+    raw_material: Mapped["RawMaterial"] = relationship()
 
 
 class Project(Base):
@@ -55,7 +82,7 @@ class Scenario(Base):
     electricity_price_eur_per_kwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.15)
 
     project: Mapped["Project"] = relationship(back_populates="scenarios")
-    result: Mapped["Result | None"] = relationship(
+    result: Mapped["Result"] = relationship(
         back_populates="scenario", cascade="all, delete-orphan", uselist=False
     )
     modules: Mapped[list["ModuleConfiguration"]] = relationship(
@@ -78,6 +105,7 @@ class Result(Base):
     cost_per_kwh_cycle: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     cost_per_lifetime_kwh: Mapped[float] = mapped_column(Float, nullable=False)
     lcos: Mapped[float] = mapped_column(Float, nullable=False)
+    input_signature: Mapped[str] = mapped_column(String(64), nullable=False, default="")
 
     scenario: Mapped["Scenario"] = relationship(back_populates="result")
 
@@ -98,7 +126,7 @@ class ModuleConfiguration(Base):
     cost_overhead_fraction: Mapped[float] = mapped_column(Float, nullable=False, default=0.1)
 
     scenario: Mapped["Scenario"] = relationship(back_populates="modules")
-    result: Mapped["ModuleResult | None"] = relationship(
+    result: Mapped["ModuleResult"] = relationship(
         back_populates="module", cascade="all, delete-orphan", uselist=False
     )
 
@@ -129,3 +157,30 @@ class ModuleResult(Base):
     module_lcos: Mapped[float] = mapped_column(Float, nullable=False)
 
     module: Mapped["ModuleConfiguration"] = relationship(back_populates="result")
+
+
+class StudyModel(Base):
+    __tablename__ = "study_models"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    kind: Mapped[str] = mapped_column(String(50), nullable=False)
+    input_variable: Mapped[str] = mapped_column(String(100), nullable=False)
+    output_metric: Mapped[str] = mapped_column(String(100), nullable=False)
+    correlation_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    parameters_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+
+    points: Mapped[list["StudyModelPoint"]] = relationship(
+        back_populates="model", cascade="all, delete-orphan"
+    )
+
+
+class StudyModelPoint(Base):
+    __tablename__ = "study_model_points"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    model_id: Mapped[int] = mapped_column(ForeignKey("study_models.id"), nullable=False)
+    x: Mapped[float] = mapped_column(Float, nullable=False)
+    y: Mapped[float] = mapped_column(Float, nullable=False)
+
+    model: Mapped["StudyModel"] = relationship(back_populates="points")

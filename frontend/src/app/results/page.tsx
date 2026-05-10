@@ -11,6 +11,7 @@ export default function ResultsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | "">("");
   const [selectedScenarioId, setSelectedScenarioId] = useState<number | "">("");
   const [result, setResult] = useState<Result | null>(null);
+  const [isLoadingResult, setIsLoadingResult] = useState(false);
   const [message, setMessage] = useState("");
 
   function parseSelectNumber(value: string): number | "" {
@@ -42,17 +43,36 @@ export default function ResultsPage() {
     }
   }, [selectedProjectId]);
 
-  async function handleCalculate() {
+  useEffect(() => {
+    if (selectedScenarioId) {
+      refreshResult(selectedScenarioId).catch((error: Error) => {
+        setMessage(error.message);
+        setIsLoadingResult(false);
+      });
+    } else {
+      setResult(null);
+    }
+  }, [selectedScenarioId]);
+
+  async function refreshResult(scenarioId: number) {
+    setIsLoadingResult(true);
+    setMessage("");
+    const data = await api.post<Result>(`/calculate/${scenarioId}`, {});
+    setResult(data);
+    setIsLoadingResult(false);
+    setMessage("Results are up to date.");
+  }
+
+  async function handleRefresh() {
     if (!selectedScenarioId) {
       setMessage("Choose a scenario first.");
       return;
     }
 
     try {
-      const data = await api.post<Result>(`/calculate/${selectedScenarioId}`, {});
-      setResult(data);
-      setMessage("Calculation complete.");
+      await refreshResult(selectedScenarioId);
     } catch (error) {
+      setIsLoadingResult(false);
       setMessage(error instanceof Error ? error.message : "Calculation failed");
     }
   }
@@ -121,11 +141,11 @@ export default function ResultsPage() {
           </div>
         </div>
         <div className="actions">
-          <button className="button" type="button" onClick={handleCalculate}>
-            Calculate results
+          <button className="button secondary" type="button" onClick={handleRefresh}>
+            Refresh
           </button>
         </div>
-        <div className="message">{message}</div>
+        <div className="message">{isLoadingResult ? "Updating results..." : message}</div>
       </section>
 
       <section className="card-grid">

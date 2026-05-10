@@ -7,6 +7,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Battery TEA",
   description: "Battery techno-economic analysis MVP",
+  icons: {
+    icon: "/app-icon.svg",
+  },
 };
 
 const inter = Inter({

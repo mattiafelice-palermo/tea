@@ -2,6 +2,11 @@ import Link from "next/link";
 
 const panels = [
   {
+    href: "/raw-materials",
+    title: "Raw Materials",
+    copy: "Track purchasable inputs and their EUR/kg cost basis.",
+  },
+  {
     href: "/components",
     title: "Components",
     copy: "Define materials with density in kg/L and cost in EUR/kg.",
